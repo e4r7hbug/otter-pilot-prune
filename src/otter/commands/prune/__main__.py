@@ -12,6 +12,11 @@ LOG = logging.getLogger(__name__)
 Wheel = collections.namedtuple('Wheel', ['name', 'version', 'path'])
 
 
+def progress_item(path):
+    """Return the current item name for progress bar."""
+    return getattr(path, 'name', None)
+
+
 def old_wheels(wheel_dir):
     """Iterate through Wheels that should be deleted.
 
@@ -22,25 +27,27 @@ def old_wheels(wheel_dir):
     location = pathlib.Path(wheel_dir)
 
     previous = Wheel('', '', pathlib.Path())
-    for wheel in sorted(location.iterdir()):
-        LOG.debug('Checking for pruning: %s', wheel)
 
-        name, version, *_ = wheel.name.split('-')
-        current = Wheel(name=name, version=version, path=wheel)
+    with click.progressbar(sorted(location.iterdir()), item_show_func=progress_item) as wheels:
+        for wheel in wheels:
+            LOG.debug('Checking for pruning: %s', wheel)
 
-        same_name = current.name == previous.name
-        same_version = current.version == previous.version
+            name, version, *_ = wheel.name.split('-')
+            current = Wheel(name=name, version=version, path=wheel)
 
-        if same_name and not same_version:
-            LOG.debug('Should delete: %s', previous)
-            yield previous
-        elif same_version:
-            LOG.debug('Most likely compiled for different Python versions: %s & %s', current.path.name,
-                      previous.path.name)
-        else:
-            LOG.debug('Different Packages: %s & %s', current.path.name, previous.path.name)
+            same_name = current.name == previous.name
+            same_version = current.version == previous.version
 
-        previous = current
+            if same_name and not same_version:
+                LOG.debug('Should delete: %s', previous)
+                yield previous
+            elif same_version:
+                LOG.debug('Most likely compiled for different Python versions: %s & %s', current.path.name,
+                          previous.path.name)
+            else:
+                LOG.debug('Different Packages: %s & %s', current.path.name, previous.path.name)
+
+            previous = current
 
 
 @click.command()
