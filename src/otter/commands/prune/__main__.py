@@ -12,14 +12,13 @@ LOG = logging.getLogger(__name__)
 Package = collections.namedtuple('Package', ['name', 'version', 'path'])
 
 
-@click.command()
-@click.option('--no-dry', is_flag=True, help='Enable deletion.')
-@click.option(
-    '-w', '--wheel-dir', type=click.Path(exists=True, file_okay=False), required=True, help='Location of Wheels.')
-def main(no_dry, wheel_dir):
-    """Remove old Python Wheels from local directory."""
-    pruned_bytes = bitmath.MiB()
+def old_wheels(wheel_dir):
+    """Iterate through Wheels that should be deleted.
 
+    Yields:
+        Package: Old Wheel that is safe to delete.
+
+    """
     location = pathlib.Path(wheel_dir)
 
     previous = Package('', '', pathlib.Path())
@@ -34,17 +33,30 @@ def main(no_dry, wheel_dir):
                 LOG.debug('Most likely compiled for different Python versions: %s & %s', current.path.name,
                           previous.path.name)
             else:
-                pruned_bytes += bitmath.getsize(previous.path)
-
-                if no_dry:
-                    previous.path.unlink()
-                    LOG.info('Removed: %s', previous.path)
-                else:
-                    LOG.info('Should delete: %s', previous.path)
+                LOG.debug('Should delete: %s', previous)
+                yield previous
         else:
             LOG.debug('Different Packages: %s & %s', current.path.name, previous.path.name)
 
         previous = current
+
+
+@click.command()
+@click.option('--no-dry', is_flag=True, help='Enable deletion.')
+@click.option(
+    '-w', '--wheel-dir', type=click.Path(exists=True, file_okay=False), required=True, help='Location of Wheels.')
+def main(no_dry, wheel_dir):
+    """Remove old Python Wheels from local directory."""
+    pruned_bytes = bitmath.MiB()
+
+    for old_wheel in old_wheels(wheel_dir):
+        pruned_bytes += bitmath.getsize(old_wheel.path)
+
+        if no_dry:
+            old_wheel.path.unlink()
+            LOG.info('Removed: %s', old_wheel.path)
+        else:
+            LOG.info('Would delete: %s', old_wheel.path)
 
     LOG.info('Freed: %s', pruned_bytes)
 
