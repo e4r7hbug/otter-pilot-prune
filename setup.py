@@ -11,4 +11,5 @@ setup(
     use_scm_version=True,
     include_package_data=True,
     namespace_packages=['otter'],
+    install_requires=['bitmath'],
 )

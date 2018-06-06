@@ -5,6 +5,8 @@ import pathlib
 
 import click
 
+import bitmath
+
 LOG = logging.getLogger(__name__)
 
 Package = collections.namedtuple('Package', ['name', 'version', 'path'])
@@ -19,7 +21,7 @@ def main(no_dry, wheel_dir):
 
     Good for taking care of business.
     """
-    pruned_bytes = 0
+    pruned_bytes = bitmath.MiB()
 
     location = pathlib.Path(wheel_dir)
 
@@ -35,8 +37,7 @@ def main(no_dry, wheel_dir):
                 LOG.debug('Most likely compiled for different Python versions: %s & %s', current.path.name,
                           previous.path.name)
             else:
-                stat = previous.path.lstat()
-                pruned_bytes += stat.st_size
+                pruned_bytes += bitmath.getsize(previous.path)
 
                 if no_dry:
                     previous.path.unlink()
@@ -48,7 +49,7 @@ def main(no_dry, wheel_dir):
 
         previous = current
 
-    LOG.info('Freed %s bytes.', pruned_bytes)
+    LOG.info('Freed: %s', pruned_bytes)
 
 
 if __name__ == '__main__':
