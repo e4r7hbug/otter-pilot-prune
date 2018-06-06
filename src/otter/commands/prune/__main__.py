@@ -17,10 +17,7 @@ Package = collections.namedtuple('Package', ['name', 'version', 'path'])
 @click.option(
     '-w', '--wheel-dir', type=click.Path(exists=True, file_okay=False), required=True, help='Location of Wheels.')
 def main(no_dry, wheel_dir):
-    """Otter Pilot prune.
-
-    Good for taking care of business.
-    """
+    """Remove old Python Wheels from local directory."""
     pruned_bytes = bitmath.MiB()
 
     location = pathlib.Path(wheel_dir)
