@@ -28,13 +28,15 @@ def old_wheels(wheel_dir):
         name, version, *_ = wheel.name.split('-')
         current = Wheel(name=name, version=version, path=wheel)
 
-        if current.name == previous.name:
-            if current.version == previous.version:
-                LOG.debug('Most likely compiled for different Python versions: %s & %s', current.path.name,
-                          previous.path.name)
-            else:
-                LOG.debug('Should delete: %s', previous)
-                yield previous
+        same_name = current.name == previous.name
+        same_version = current.version == previous.version
+
+        if same_name and not same_version:
+            LOG.debug('Should delete: %s', previous)
+            yield previous
+        elif same_version:
+            LOG.debug('Most likely compiled for different Python versions: %s & %s', current.path.name,
+                      previous.path.name)
         else:
             LOG.debug('Different Packages: %s & %s', current.path.name, previous.path.name)
 
