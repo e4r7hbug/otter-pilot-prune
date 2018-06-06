@@ -9,24 +9,24 @@ import bitmath
 
 LOG = logging.getLogger(__name__)
 
-Package = collections.namedtuple('Package', ['name', 'version', 'path'])
+Wheel = collections.namedtuple('Wheel', ['name', 'version', 'path'])
 
 
 def old_wheels(wheel_dir):
     """Iterate through Wheels that should be deleted.
 
     Yields:
-        Package: Old Wheel that is safe to delete.
+        Wheel: Old Wheel that is safe to delete.
 
     """
     location = pathlib.Path(wheel_dir)
 
-    previous = Package('', '', pathlib.Path())
+    previous = Wheel('', '', pathlib.Path())
     for wheel in sorted(location.iterdir()):
         LOG.debug('Checking for pruning: %s', wheel)
 
         name, version, *_ = wheel.name.split('-')
-        current = Package(name=name, version=version, path=wheel)
+        current = Wheel(name=name, version=version, path=wheel)
 
         if current.name == previous.name:
             if current.version == previous.version:
